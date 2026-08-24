@@ -1,6 +1,5 @@
-# PyDownload (Java 单文件版)
+# single-file-java-downloader
 
-仿 `pydownload-v2.py` 的 Java 单文件多线程下载器（IDM 风格），**仅一个 Java 源文件**，零外部依赖，纯 JDK 标准库。
 
 ## 编译 / 运行（需 JDK 8+）
 
