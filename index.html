@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>single-file-java-downloader · WinUI 风格介绍</title>
+    <!-- 引入 Fluent UI Web Components v2 -->
+    <script type="module">
+        // 动态导入以避免阻塞渲染
+        import { provideFluentDesignSystem, fluentButton, fluentCard, fluentTextField, fluentTextArea, fluentCheckbox, fluentRadio, fluentRadioGroup, fluentSlider, fluentSliderLabel, fluentSwitch, fluentTabs, fluentTab, fluentTabPanel, fluentCombobox, fluentOption, fluentSelect, fluentListbox, fluentProgress, fluentProgressRing, fluentBadge, fluentDivider, fluentAnchor, fluentBreadcrumb, fluentBreadcrumbItem, fluentMenuItem, fluentMenu, fluentTreeView, fluentTreeItem, fluentTooltip, fluentDialog, fluentAccordion, fluentAccordionItem, fluentNumberField, fluentSearch } from 'https://cdn.jsdelivr.net/npm/@fluentui/web-components@2.6.0/dist/web-components.min.js';
+        provideFluentDesignSystem()
+            .register(
+                fluentButton(),
+                fluentCard(),
+                fluentTextField(),
+                fluentTextArea(),
+                fluentCheckbox(),
+                fluentRadio(),
+                fluentRadioGroup(),
+                fluentSlider(),
+                fluentSliderLabel(),
+                fluentSwitch(),
+                fluentTabs(),
+                fluentTab(),
+                fluentTabPanel(),
+                fluentCombobox(),
+                fluentOption(),
+                fluentSelect(),
+                fluentListbox(),
+                fluentProgress(),
+                fluentProgressRing(),
+                fluentBadge(),
+                fluentDivider(),
+                fluentAnchor(),
+                fluentBreadcrumb(),
+                fluentBreadcrumbItem(),
+                fluentMenuItem(),
+                fluentMenu(),
+                fluentTreeView(),
+                fluentTreeItem(),
+                fluentTooltip(),
+                fluentDialog(),
+                fluentAccordion(),
+                fluentAccordionItem(),
+                fluentNumberField(),
+                fluentSearch()
+            );
+        // 主题切换：默认 light，优先 localStorage，其次系统偏好
+        const theme = localStorage.getItem('fluent-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        window.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('theme-toggle');
+            if (toggle) {
+                toggle.checked = theme === 'dark';
+                toggle.addEventListener('change', () => {
+                    const newTheme = toggle.checked ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('fluent-theme', newTheme);
+                    // 同步 Fluent baseLayerLuminance
+                    document.querySelector('fluent-design-system-provider')?.setAttribute('base-layer-luminance', newTheme === 'dark' ? '0' : '1');
+                });
+            }
+            // 设置初始 luminance
+            const provider = document.querySelector('fluent-design-system-provider');
+            if (provider) provider.setAttribute('base-layer-luminance', theme === 'dark' ? '0' : '1');
+        });
+    </script>
+    <style>
+        /* ---------- WinUI / Fluent 2 设计令牌 ---------- */
+        :root {
+            --background-base: #fafafa;
+            --background-card: #ffffff;
+            --background-mica: #f0f0f0;
+            --text-primary: #1a1a1a;
+            --text-secondary: #5a5a5a;
+            --accent: #0078d4;
+            --accent-hover: #106ebe;
+            --border-default: #e0e0e0;
+            --border-focus: #0078d4;
+            --radius-control: 4px;
+            --radius-overlay: 8px;
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.06);
+            --font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        [data-theme="dark"] {
+            --background-base: #1c1c1c;
+            --background-card: #252525;
+            --background-mica: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #9a9a9a;
+            --accent: #60cdff;
+            --accent-hover: #7ad0ff;
+            --border-default: #3a3a3a;
+            --border-focus: #60cdff;
+            --shadow-card: 0 1px 4px rgba(0,0,0,0.4);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--font-family);
+            background: var(--background-base);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Mica 背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 10% 40%, rgba(0,120,212,0.03) 0%, transparent 50%),
+                radial-gradient(circle at 90% 70%, rgba(96,205,255,0.04) 0%, transparent 55%),
+                linear-gradient(135deg, var(--background-base) 0%, var(--background-mica) 80%);
+            pointer-events: none;
+        }
+        /* 亚克力标题栏 */
+        .titlebar {
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--border-default);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+        }
+        [data-theme="dark"] .titlebar {
+            background: rgba(37,37,37,0.78);
+        }
+        .titlebar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .titlebar-left h1 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        .titlebar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .repo-badge {
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: var(--radius-control);
+            background: var(--accent);
+            color: white;
+            font-weight: 500;
+        }
+        /* 主体布局 */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        /* 左侧导航 (NavigationView) */
+        .nav {
+            width: 260px;
+            min-width: 240px;
+            background: var(--background-card);
+            border-right: 1px solid var(--border-default);
+            padding: 16px 0;
+            overflow-y: auto;
+            height: calc(100vh - 56px);
+            position: sticky;
+            top: 64px;
+        }
+        .nav-header {
+            padding: 0 20px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-radius: 0;
+            font-size: 14px;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .nav-item:hover {
+            background: rgba(0,120,212,0.07);
+        }
+        .nav-item.active {
+            background: rgba(0,120,212,0.12);
+            border-left: 3px solid var(--accent);
+            font-weight: 550;
+        }
+        .nav-item .icon {
+            width: 22px;
+            text-align: center;
+            font-size: 18px;
+        }
+        /* 右侧内容区 */
+        .content {
+            flex: 1;
+            padding: 32px 48px;
+            max-width: 1100px;
+            overflow-y: auto;
+        }
+        /* Hero 区域 */
+        .hero {
+            margin-bottom: 36px;
+        }
+        .hero h2 {
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+        }
+        .hero p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin-bottom: 24px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        /* 卡片网格 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+        fluent-card {
+            padding: 20px;
+            border-radius: var(--radius-overlay);
+            background: var(--background-card);
+            box-shadow: var(--shadow-card);
+            transition: transform 0.1s ease, box-shadow 0.2s;
+            border: 1px solid var(--border-default);
+        }
+        fluent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.09);
+        }
+        .card-icon {
+            font-size: 26px;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 650;
+            margin-bottom: 4px;
+        }
+        .card-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+        /* 表格样式 */
+        .feature-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .feature-table th,
+        .feature-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-default);
+        }
+        .feature-table th {
+            font-weight: 600;
+            background: var(--background-mica);
+        }
+        /* 代码块 */
+        .code-block {
+            background: var(--background-mica);
+            padding: 16px 20px;
+            border-radius: var(--radius-control);
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            border: 1px solid var(--border-default);
+            margin: 12px 0;
+        }
+        /* 底部 */
+        footer {
+            text-align: center;
+            padding: 32px 24px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            border-top: 1px solid var(--border-default);
+            margin-top: 40px;
+        }
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .nav {
+                display: none;
+            }
+            .content {
+                padding: 20px 16px;
+            }
+            .titlebar {
+                padding: 10px 16px;
+            }
+            .hero h2 {
+                font-size: 26px;
+            }
+        }
+        /* 辅助类 */
+        .section-title {
+            font-size: 21px;
+            font-weight: 680;
+            margin: 28px 0 12px;
+        }
+        .mt-16 { margin-top: 16px; }
+        .mb-8 { margin-bottom: 8px; }
+        .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    </style>
+</head>
+<body>
+    <fluent-design-system-provider base-layer-luminance="1">
+        <!-- 标题栏 -->
+        <div class="titlebar">
+            <div class="titlebar-left">
+                <span style="font-size:22px;">📦</span>
+                <h1>single-file-java-downloader</h1>
+                <span class="repo-badge">Public</span>
+            </div>
+            <div class="titlebar-right">
+                <span style="font-size:13px;color:var(--text-secondary);">🌗 主题</span>
+                <fluent-switch id="theme-toggle" role="switch" aria-checked="false"></fluent-switch>
+                <fluent-anchor href="https://github.com/lishaoyang459353850/single-file-java-downloader" appearance="hypertext" target="_blank">GitHub</fluent-anchor>
+            </div>
+        </div>
+
+        <div class="layout">
+            <!-- 左侧导航 -->
+            <nav class="nav">
+                <div class="nav-header">目录</div>
+                <a class="nav-item active" href="#hero"><span class="icon">🏠</span> 概览</a>
+                <a class="nav-item" href="#features"><span class="icon">✨</span> 核心特性</a>
+                <a class="nav-item" href="#quickstart"><span class="icon">🚀</span> 快速开始</a>
+                <a class="nav-item" href="#usage"><span class="icon">📋</span> 功能一览</a>
+                <a class="nav-item" href="#files"><span class="icon">📁</span> 项目文件</a>
+                <a class="nav-item" href="#first-run"><span class="icon">⚙️</span> 首次运行</a>
+                <a class="nav-item" href="#license"><span class="icon">📄</span> 许可证</a>
+                <div style="margin-top:24px;padding:0 16px;">
+                    <fluent-search placeholder="搜索特性…" style="width:100%;"></fluent-search>
+                </div>
+            </nav>
+
+            <!-- 主要内容 -->
+            <main class="content">
+                <!-- Hero -->
+                <section id="hero" class="hero">
+                    <h2>单文件 Java 多线程下载器</h2>
+                    <p>一个仅含单个 <code>.java</code> 文件的轻量级 HTTP 下载工具，支持 8 线程并发、断点续传、进度可视化、DNS 缓存与代理配置。</p>
+                    <div class="hero-actions">
+                        <fluent-anchor href="https://github.com/lishaoyang459353850/single-file-java-downloader" appearance="button">查看仓库</fluent-anchor>
+                        <fluent-anchor href="#quickstart" appearance="outline">快速上手</fluent-anchor>
+                    </div>
+                    <div class="flex mt-16" style="gap:20px;">
+                        <span><fluent-badge appearance="accent">Java 100%</fluent-badge></span>
+                        <span><fluent-badge appearance="neutral">⭐ 1</fluent-badge></span>
+                        <span><fluent-badge appearance="neutral">MIT</fluent-badge></span>
+                        <span><fluent-badge appearance="neutral">JDK 8+</fluent-badge></span>
+                    </div>
+                </section>
+
+                <!-- 核心特性 -->
+                <section id="features">
+                    <h3 class="section-title">✨ 核心特性</h3>
+                    <div class="card-grid">
+                        <fluent-card>
+                            <span class="card-icon">⚡</span>
+                            <div class="card-title">8 线程并发</div>
+                            <div class="card-desc">分块下载，充分利用带宽，大幅提升大文件下载速度。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">⏯️</span>
+                            <div class="card-title">断点续传</div>
+                            <div class="card-desc">支持暂停/恢复，意外中断后自动从上次断点继续。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">📊</span>
+                            <div class="card-title">进度可视化</div>
+                            <div class="card-desc">实时显示下载百分比、速度、已用时间与预估剩余时间。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">🌐</span>
+                            <div class="card-title">DNS 缓存</div>
+                            <div class="card-desc">内置 DNS 解析缓存，减少重复查询延迟。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">🔌</span>
+                            <div class="card-title">代理支持</div>
+                            <div class="card-desc">支持 HTTP/HTTPS/SOCKS 代理配置。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">🔄</span>
+                            <div class="card-title">自动重试</div>
+                            <div class="card-desc">连接失败自动重试，可配置最大重试次数。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">🧩</span>
+                            <div class="card-title">单文件零依赖</div>
+                            <div class="card-desc">仅一个 Java 源文件，无需第三方库，JDK 8+ 即可编译运行。</div>
+                        </fluent-card>
+                        <fluent-card>
+                            <span class="card-icon">📝</span>
+                            <div class="card-title">详细日志</div>
+                            <div class="card-desc">分级日志输出，方便调试与监控下载状态。</div>
+                        </fluent-card>
+                    </div>
+                </section>
+
+                <!-- 快速开始 -->
+                <section id="quickstart">
+                    <h3 class="section-title">🚀 快速开始</h3>
+                    <p class="mb-8">方式一：使用 PowerShell 脚本（推荐 Windows）</p>
+                    <div class="code-block">powershell -ExecutionPolicy Bypass -File build.ps1</div>
+                    <p class="mb-8 mt-16">方式二：手动编译与运行</p>
+                    <div class="code-block">javac PyDownload.java<br>java PyDownload [URL] [选项...]</div>
+                    <p class="mb-8 mt-16">打包为 JAR</p>
+                    <div class="code-block">jar cfe downloader.jar PyDownload *.class</div>
+                </section>
+
+                <!-- 功能一览 -->
+                <section id="usage">
+                    <h3 class="section-title">📋 功能一览</h3>
+                    <table class="feature-table">
+                        <thead>
+                            <tr><th>功能</th><th>说明</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>多线程下载</td><td>8 线程并行分块下载</td></tr>
+                            <tr><td>断点续传</td><td>支持 Range 头，中断后可恢复</td></tr>
+                            <tr><td>进度显示</td><td>百分比、速度、时间估算</td></tr>
+                            <tr><td>DNS 缓存</td><td>内置 TTL 可控的 DNS 缓存</td></tr>
+                            <tr><td>代理配置</td><td>支持 HTTP/HTTPS/SOCKS</td></tr>
+                            <tr><td>自动重试</td><td>可配置重试次数与间隔</td></tr>
+                            <tr><td>限速控制</td><td>可选限制下载速度</td></tr>
+                            <tr><td>日志级别</td><td>DEBUG / INFO / WARN / ERROR</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- 项目文件 -->
+                <section id="files">
+                    <h3 class="section-title">📁 项目文件</h3>
+                    <ul style="list-style:none;padding:0;">
+                        <li style="padding:6px 0;"><fluent-badge appearance="accent">.java</fluent-badge> <code>PyDownload.java</code> — 主程序</li>
+                        <li style="padding:6px 0;"><fluent-badge appearance="neutral">.ps1</fluent-badge> <code>build.ps1</code> — 构建脚本</li>
+                        <li style="padding:6px 0;"><fluent-badge appearance="neutral">.md</fluent-badge> <code>README.md</code> — 说明文档</li>
+                        <li style="padding:6px 0;"><fluent-badge appearance="neutral">LICENSE</fluent-badge> — MIT 许可证</li>
+                    </ul>
+                </section>
+
+                <!-- 首次运行 -->
+                <section id="first-run">
+                    <h3 class="section-title">⚙️ 首次运行说明</h3>
+                    <p>请确保已安装 JDK 8 或更高版本，并将 <code>java</code> 加入环境变量。首次运行时会自动创建配置文件 <code>config.properties</code>，可根据需要调整线程数、重试策略等参数。</p>
+                </section>
+
+                <!-- 许可证 -->
+                <section id="license">
+                    <h3 class="section-title">📄 许可证</h3>
+                    <p>本项目采用 MIT 许可证。您可以自由使用、修改和分发，但需保留版权声明。</p>
+                </section>
+
+                <footer>
+                    <p>single-file-java-downloader · 由 lishaoyang459353850 维护 · MIT License</p>
+                </footer>
+            </main>
+        </div>
+    </fluent-design-system-provider>
+</body>
+</html>
